@@ -21,13 +21,15 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   TextToSpeech tts = TextToSpeech();
   bool _speechEnabled = true;
+  bool isEn = true;
 
   @override
   void initState() {
     super.initState();
     messages = box.get('messages', defaultValue: <String>[]);
+    isEn = box.get('isEn', defaultValue: true);
     scrollToBottom();
-    tts.setLanguage('en-US');
+    tts.setLanguage(isEn ? 'en-US' : 'vi-VN');
   }
 
   @override
@@ -41,22 +43,42 @@ class _ChatPageState extends State<ChatPage> {
               return [
                 PopupMenuItem(
                   child: const Text('English'),
-                  onTap: () => tts.setLanguage('en-US'),
+                  onTap: () {
+                    setState(() {
+                      isEn = true;
+                      box.put('isEn', true);
+                      tts.setLanguage('en-US');
+                    });
+                  },
                 ),
                 PopupMenuItem(
                   child: const Text('Tiếng Việt'),
-                  onTap: () => tts.setLanguage('vi-VN'),
+                  onTap: () {
+                    setState(() {
+                      isEn = false;
+                      box.put('isEn', false);
+                      tts.setLanguage('vi-VN');
+                    });
+                  },
                 ),
                 PopupMenuItem(
                     onTap: () => setState(() {
                           _speechEnabled = !_speechEnabled;
                           tts.stop();
                         }),
-                    child: Text(_speechEnabled ? 'Tắt đọc' : 'Bật đọc')),
+                    child: Text(_speechEnabled
+                        ? isEn
+                            ? 'Disable voice'
+                            : 'Tắt đọc'
+                        : isEn
+                            ? 'Enable voice'
+                            : 'Bật đọc')),
                 PopupMenuItem(
-                    child: const Text('Xóa lịch sử chat'),
+                    child:
+                        Text(isEn ? 'Clear chat history' : 'Xóa lịch sử chat'),
                     onTap: () => setState(() {
                           messages.clear();
+                          box.put('messages', messages);
                         }))
               ];
             },
@@ -85,9 +107,12 @@ class _ChatPageState extends State<ChatPage> {
                             RandomAvatar((index & 1 == 1) ? 'ChatNPT' : 'p',
                                 width: 40),
                             if (index & 1 == 1)
-                              IconButton(
-                                onPressed: () => tts.speak(messages[index]),
-                                icon: const Icon(Icons.play_circle),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: InkWell(
+                                  onTap: () => tts.speak(messages[index]),
+                                  child: const Icon(Icons.play_circle),
+                                ),
                               )
                           ],
                         ),
@@ -103,7 +128,7 @@ class _ChatPageState extends State<ChatPage> {
             controller: _textController,
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
-              hintText: 'Input message',
+              hintText: isEn ? 'Input message' : 'Nhập tin nhắn',
               suffixIcon: InkWell(
                   onTap: () async {
                     if (_textController.text.isEmpty) return;
