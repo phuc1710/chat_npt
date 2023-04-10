@@ -26,6 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     messages = box.get('messages', defaultValue: <String>[]);
+    scrollToBottom();
     tts.setLanguage('en-US');
   }
 
