@@ -16,10 +16,10 @@ class _ChatPageState extends State<ChatPage> {
   List<String> messages = [];
   final ScrollController _scrollController = ScrollController();
   TextToSpeech tts = TextToSpeech();
+  bool _speechEnabled = true;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     tts.setLanguage('en-US');
   }
@@ -27,7 +27,36 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ChatNPT')),
+      appBar: AppBar(
+        title: const Text('ChatNPT'),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                  child: const Text('English'),
+                  onTap: () => tts.setLanguage('en-US'),
+                ),
+                PopupMenuItem(
+                  child: const Text('Tiếng Việt'),
+                  onTap: () => tts.setLanguage('vi-VN'),
+                ),
+                PopupMenuItem(
+                    onTap: () => setState(() {
+                          _speechEnabled = !_speechEnabled;
+                        }),
+                    child: Text(_speechEnabled ? 'Tắt đọc' : 'Bật đọc')),
+                PopupMenuItem(
+                    child: const Text('Xóa lịch sử chat'),
+                    onTap: () => setState(() {
+                          messages.clear();
+                        }))
+              ];
+            },
+            enableFeedback: false,
+          )
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -71,7 +100,7 @@ class _ChatPageState extends State<ChatPage> {
                     setState(() {
                       messages.add(response);
                       scrollToBottom();
-                      tts.speak(response);
+                      if (_speechEnabled) tts.speak(response);
                     });
                   },
                   child: const Icon(Icons.send)),
