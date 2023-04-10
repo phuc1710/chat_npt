@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:random_avatar/random_avatar.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:text_to_speech/text_to_speech.dart';
 
 import 'http_utils.dart';
@@ -20,12 +22,15 @@ class _ChatPageState extends State<ChatPage> {
   late List<String> messages;
   final ScrollController _scrollController = ScrollController();
   TextToSpeech tts = TextToSpeech();
-  bool _speechEnabled = true;
+  bool _voiceEnabled = true;
   bool isEn = true;
+  SpeechToText speech = SpeechToText();
+  bool speechEnable = false;
 
   @override
   void initState() {
     super.initState();
+    _initSpeech();
     messages = box.get('messages', defaultValue: <String>[]);
     isEn = box.get('isEn', defaultValue: true);
     scrollToBottom();
@@ -63,10 +68,10 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 PopupMenuItem(
                     onTap: () => setState(() {
-                          _speechEnabled = !_speechEnabled;
+                          _voiceEnabled = !_voiceEnabled;
                           tts.stop();
                         }),
-                    child: Text(_speechEnabled
+                    child: Text(_voiceEnabled
                         ? isEn
                             ? 'Disable voice'
                             : 'Tắt đọc'
@@ -129,23 +134,38 @@ class _ChatPageState extends State<ChatPage> {
             decoration: InputDecoration(
               border: const OutlineInputBorder(),
               hintText: isEn ? 'Input message' : 'Nhập tin nhắn',
-              suffixIcon: InkWell(
-                  onTap: () async {
-                    if (_textController.text.isEmpty) return;
-                    setState(() {
-                      messages.add(_textController.text);
-                      _textController.clear();
-                      scrollToBottom();
-                    });
-                    var response = await getResponse(getRequestBody(messages));
-                    setState(() {
-                      messages.add(response);
-                      scrollToBottom();
-                      box.put('messages', messages);
-                      if (_speechEnabled) tts.speak(response);
-                    });
-                  },
-                  child: const Icon(Icons.send)),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                      onTap: () {
+                        speech.isNotListening
+                            ? _startListening()
+                            : _stopListening();
+                      },
+                      child: Icon(
+                          speech.isNotListening ? Icons.mic : Icons.mic_off)),
+                  const SizedBox(width: 10),
+                  InkWell(
+                      onTap: () async {
+                        if (_textController.text.isEmpty) return;
+                        setState(() {
+                          messages.add(_textController.text);
+                          _textController.clear();
+                          scrollToBottom();
+                        });
+                        var response =
+                            await getResponse(getRequestBody(messages));
+                        setState(() {
+                          messages.add(response);
+                          scrollToBottom();
+                          box.put('messages', messages);
+                          if (_voiceEnabled) tts.speak(response);
+                        });
+                      },
+                      child: const Icon(Icons.send)),
+                ],
+              ),
             ),
             textInputAction: TextInputAction.send,
           )
@@ -161,6 +181,27 @@ class _ChatPageState extends State<ChatPage> {
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
+    });
+  }
+
+  void _initSpeech() async {
+    _voiceEnabled = await speech.initialize();
+    setState(() {});
+  }
+
+  void _startListening() async {
+    await speech.listen(onResult: _onSpeechResult);
+    setState(() {});
+  }
+
+  void _stopListening() async {
+    await speech.stop();
+    setState(() {});
+  }
+
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    setState(() {
+      _textController.text = result.recognizedWords;
     });
   }
 }
