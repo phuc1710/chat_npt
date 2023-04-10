@@ -1,6 +1,7 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:random_avatar/random_avatar.dart';
+
+import 'http_utils.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -18,7 +19,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(title: const Text('Chat Page')),
+      appBar: AppBar(title: const Text('ChatNPT')),
       body: Column(
         children: [
           Expanded(
@@ -51,18 +52,17 @@ class _ChatPageState extends State<ChatPage> {
               border: const OutlineInputBorder(),
               hintText: 'Input message',
               suffixIcon: InkWell(
-                  onTap: () {
+                  onTap: () async {
                     if (_textController.text.isEmpty) return;
                     setState(() {
                       messages.add(_textController.text);
                       _textController.clear();
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _scrollController.animateTo(
-                          _scrollController.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      });
+                      scrollToBottom();
+                    });
+                    var response = await getResponse(getRequestBody(messages));
+                    setState(() {
+                      messages.add(response);
+                      scrollToBottom();
                     });
                   },
                   child: const Icon(Icons.send)),
@@ -72,5 +72,15 @@ class _ChatPageState extends State<ChatPage> {
         ],
       ),
     );
+  }
+
+  void scrollToBottom() {
+    return WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 }
