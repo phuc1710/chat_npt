@@ -17,7 +17,7 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  var box = Hive.box('chat_history');
+  Box box = Hive.box('chat_history');
   final TextEditingController _textController = TextEditingController();
   late List<String> messages;
   final ScrollController _scrollController = ScrollController();
@@ -26,6 +26,8 @@ class _ChatPageState extends State<ChatPage> {
   bool isEn = true;
   SpeechToText speech = SpeechToText();
   bool speechEnable = false;
+  List<LocaleName> locale = [];
+  LocaleName selectedLocale = LocaleName('', '');
 
   @override
   void initState() {
@@ -35,6 +37,8 @@ class _ChatPageState extends State<ChatPage> {
     isEn = box.get('isEn', defaultValue: true);
     scrollToBottom();
     tts.setLanguage(isEn ? 'en-US' : 'vi-VN');
+    selectedLocale = LocaleName(isEn ? 'en-US' : 'English (United States)',
+        isEn ? 'vi-VN' : 'Vietnamese (Vietnam)');
   }
 
   @override
@@ -53,6 +57,8 @@ class _ChatPageState extends State<ChatPage> {
                       isEn = true;
                       box.put('isEn', true);
                       tts.setLanguage('en-US');
+                      selectedLocale =
+                          LocaleName('en-US', 'English (United States)');
                     });
                   },
                 ),
@@ -63,6 +69,8 @@ class _ChatPageState extends State<ChatPage> {
                       isEn = false;
                       box.put('isEn', false);
                       tts.setLanguage('vi-VN');
+                      selectedLocale =
+                          LocaleName('vi-VN', 'Vietnamese (Vietnam)');
                     });
                   },
                 ),
@@ -186,11 +194,13 @@ class _ChatPageState extends State<ChatPage> {
 
   void _initSpeech() async {
     _voiceEnabled = await speech.initialize();
+    locale = await speech.locales();
     setState(() {});
   }
 
   void _startListening() async {
-    await speech.listen(onResult: _onSpeechResult);
+    await speech.listen(
+        onResult: _onSpeechResult, localeId: selectedLocale.localeId);
     setState(() {});
   }
 
