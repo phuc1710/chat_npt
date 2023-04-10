@@ -44,6 +44,7 @@ class _ChatPageState extends State<ChatPage> {
                 PopupMenuItem(
                     onTap: () => setState(() {
                           _speechEnabled = !_speechEnabled;
+                          tts.stop();
                         }),
                     child: Text(_speechEnabled ? 'Tắt đọc' : 'Bật đọc')),
                 PopupMenuItem(
@@ -73,8 +74,17 @@ class _ChatPageState extends State<ChatPage> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(right: 8.0),
-                        child: RandomAvatar((index & 1 == 1) ? 'ChatNPT' : 'p',
-                            width: 40),
+                        child: Column(
+                          children: [
+                            RandomAvatar((index & 1 == 1) ? 'ChatNPT' : 'p',
+                                width: 40),
+                            if (index & 1 == 1)
+                              IconButton(
+                                onPressed: () => tts.speak(messages[index]),
+                                icon: const Icon(Icons.play_circle),
+                              )
+                          ],
+                        ),
                       ),
                       Expanded(child: Text(messages[index])),
                     ],
