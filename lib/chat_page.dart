@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:random_avatar/random_avatar.dart';
 import 'package:text_to_speech/text_to_speech.dart';
 
 import 'http_utils.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, required this.box});
+
+  final Box box;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> {
+  var box = Hive.box('chat_history');
   final TextEditingController _textController = TextEditingController();
-  List<String> messages = [];
+  late List<String> messages;
   final ScrollController _scrollController = ScrollController();
   TextToSpeech tts = TextToSpeech();
   bool _speechEnabled = true;
@@ -21,6 +25,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    messages = box.get('messages', defaultValue: <String>[]);
     tts.setLanguage('en-US');
   }
 
@@ -110,6 +115,7 @@ class _ChatPageState extends State<ChatPage> {
                     setState(() {
                       messages.add(response);
                       scrollToBottom();
+                      box.put('messages', messages);
                       if (_speechEnabled) tts.speak(response);
                     });
                   },
