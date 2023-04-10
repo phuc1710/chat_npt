@@ -15,7 +15,7 @@ Future<String> getResponse(String prompt) async {
   );
 
   if (response.statusCode == 200) {
-    var jsonResponse = json.decode(response.body);
+    var jsonResponse = json.decode(utf8.decode(response.bodyBytes));
     var botResponse =
         jsonResponse['choices'][0]['message']['content'].toString().trim();
     return botResponse;

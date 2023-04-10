@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:random_avatar/random_avatar.dart';
+import 'package:text_to_speech/text_to_speech.dart';
 
 import 'http_utils.dart';
 
@@ -14,11 +15,18 @@ class _ChatPageState extends State<ChatPage> {
   final TextEditingController _textController = TextEditingController();
   List<String> messages = [];
   final ScrollController _scrollController = ScrollController();
+  TextToSpeech tts = TextToSpeech();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    tts.setLanguage('en-US');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(title: const Text('ChatNPT')),
       body: Column(
         children: [
@@ -63,6 +71,7 @@ class _ChatPageState extends State<ChatPage> {
                     setState(() {
                       messages.add(response);
                       scrollToBottom();
+                      tts.speak(response);
                     });
                   },
                   child: const Icon(Icons.send)),
